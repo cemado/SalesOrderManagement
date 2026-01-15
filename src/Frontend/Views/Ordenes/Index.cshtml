@@ -1,0 +1,173 @@
+@model Frontend.Models.PaginatedResponse
+
+@{
+    ViewData["Title"] = "Gestión de Órdenes";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="bi bi-clipboard-check"></i> Órdenes de Venta
+            </h2>
+            <p class="text-muted mb-0">
+                Total: @Model.TotalCount órdenes | Página @Model.PageNumber de @Model.TotalPages
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-info fs-6">
+                <i class="bi bi-person-circle"></i> @ViewBag.Username
+            </span>
+            <span class="badge bg-secondary fs-6">
+                <i class="bi bi-shield-check"></i> @ViewBag.UserRole
+            </span>
+            <a asp-action="Logout" asp-controller="Auth" class="btn btn-danger btn-sm">
+                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle-fill"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle-fill"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Botón Crear -->
+    <div class="mb-3">
+        <a asp-action="Create" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Nueva Orden
+        </a>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th><i class="bi bi-hash"></i> ID</th>
+                            <th><i class="bi bi-calendar-event"></i> Fecha</th>
+                            <th><i class="bi bi-person-badge"></i> Cliente</th>
+                            <th class="text-end"><i class="bi bi-currency-dollar"></i> Total</th>
+                            <th class="text-center"><i class="bi bi-info-circle"></i> Estado</th>
+                            <th class="text-center"><i class="bi bi-gear"></i> Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items != null && Model.Items.Any())
+                        {
+                            @foreach (var orden in Model.Items)
+                            {
+                                <tr>
+                                    <td class="fw-bold">#@orden.Id</td>
+                                    <td>@orden.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td>@orden.Cliente</td>
+                                    <td class="text-end fw-bold text-success">
+                                        $@orden.Total.ToString("N2")
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-warning text-dark">
+                                            @orden.Estado
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <!-- BOTÓN VER: VISIBLE PARA TODOS -->
+                                            <a asp-action="Details" 
+                                               asp-route-id="@orden.Id" 
+                                               class="btn btn-sm btn-info"
+                                               title="Ver Detalle">
+                                                <i class="bi bi-eye"></i> Ver
+                                            </a>
+
+                                            <!-- BOTONES EDITAR Y ELIMINAR: SOLO ADMIN -->
+                                            @{
+                                                var esAdmin = ViewBag.UserRole == "Admin";
+                                                var rolActual = ViewBag.UserRole ?? "Sin rol";
+                                            }
+
+                                            @if (esAdmin)
+                                            {
+                                                <a asp-action="Edit" 
+                                                   asp-route-id="@orden.Id" 
+                                                   class="btn btn-sm btn-warning"
+                                                   title="Editar (Solo Admin)">
+                                                    <i class="bi bi-pencil"></i> Editar
+                                                </a>
+
+                                                <form asp-action="Delete" 
+                                                      asp-route-id="@orden.Id" 
+                                                      method="post" 
+                                                      style="display:inline;"
+                                                      onsubmit="return confirm('¿Está seguro de eliminar la orden #@orden.Id?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" 
+                                                            class="btn btn-sm btn-danger"
+                                                            title="Eliminar (Solo Admin)">
+                                                        <i class="bi bi-trash"></i> Eliminar
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    Rol: @rolActual
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                    <p class="mt-2 mb-0">No hay órdenes registradas</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pageNumber="@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Debug: mostrar rol en consola
+        console.log("UserRole:", "@ViewBag.UserRole");
+        console.log("Username:", "@ViewBag.Username");
+    </script>
+}

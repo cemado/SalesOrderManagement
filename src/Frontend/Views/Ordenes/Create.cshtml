@@ -1,0 +1,173 @@
+@model Frontend.Models.CrearOrdenViewModel
+
+@{
+    ViewData["Title"] = "Crear Nueva Orden";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-plus-circle"></i> Crear Nueva Orden
+                </h2>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+            </div>
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-triangle-fill"></i> @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <!-- Datos de la Orden -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark"></i> Datos de la Orden
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Fecha" class="form-label fw-bold">
+                                        <i class="bi bi-calendar-event"></i> Fecha
+                                    </label>
+                                    <input asp-for="Fecha" 
+                                           type="date" 
+                                           class="form-control" 
+                                           required />
+                                    <span asp-validation-for="Fecha" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cliente" class="form-label fw-bold">
+                                        <i class="bi bi-person-badge"></i> Cliente
+                                    </label>
+                                    <input asp-for="Cliente" 
+                                           class="form-control" 
+                                           placeholder="Nombre del cliente" 
+                                           required />
+                                    <span asp-validation-for="Cliente" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles (Productos) -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-cart"></i> Productos
+                        </h5>
+                        <span class="badge bg-light text-dark">
+                            Debe agregar al menos 1 producto
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div id="detalles-container">
+                            <!-- Los detalles se agregarán dinámicamente con JavaScript -->
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="button" 
+                                class="btn btn-success" 
+                                onclick="agregarDetalle()">
+                            <i class="bi bi-plus-circle"></i> Agregar Producto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-save"></i> Guardar Orden
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        let detalleIndex = 0;
+
+        function agregarDetalle() {
+            const container = document.getElementById('detalles-container');
+            const detalleHtml = `
+                <div class="card mb-2 border-start border-5 border-primary detalle-item" id="detalle-${detalleIndex}">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Producto</label>
+                                <input type="text" 
+                                       name="Detalles[${detalleIndex}].Producto" 
+                                       class="form-control" 
+                                       placeholder="Nombre del producto" 
+                                       required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Cantidad</label>
+                                <input type="number" 
+                                       name="Detalles[${detalleIndex}].Cantidad" 
+                                       class="form-control" 
+                                       placeholder="1" 
+                                       min="1" 
+                                       required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Precio Unitario</label>
+                                <input type="number" 
+                                       name="Detalles[${detalleIndex}].PrecioUnitario" 
+                                       class="form-control" 
+                                       placeholder="0.00" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       required />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" 
+                                        class="btn btn-danger w-100" 
+                                        onclick="eliminarDetalle(${detalleIndex})"
+                                        title="Eliminar producto">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', detalleHtml);
+            detalleIndex++;
+        }
+
+        function eliminarDetalle(index) {
+            const elemento = document.getElementById(`detalle-${index}`);
+            if (elemento) {
+                elemento.remove();
+            }
+        }
+
+        // Agregar al menos un detalle al cargar la página
+        window.addEventListener('DOMContentLoaded', function() {
+            agregarDetalle();
+        });
+    </script>
+}

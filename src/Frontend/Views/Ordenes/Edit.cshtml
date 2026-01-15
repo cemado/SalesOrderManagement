@@ -1,0 +1,249 @@
+@model Frontend.Models.CrearOrdenViewModel
+
+@{
+    ViewData["Title"] = $"Editar Orden #{ViewBag.OrdenId}";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-pencil-square"></i> Editar Orden #@ViewBag.OrdenId
+                </h2>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+            </div>
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-triangle-fill"></i> @TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <form asp-action="Edit" asp-route-id="@ViewBag.OrdenId" method="post" id="editForm">
+                @Html.AntiForgeryToken()
+
+                <!-- Datos de la Orden -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark"></i> Información General
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Fecha" class="form-label fw-bold">
+                                        <i class="bi bi-calendar-event"></i> Fecha
+                                    </label>
+                                    <input asp-for="Fecha" 
+                                           type="date" 
+                                           class="form-control" 
+                                           required />
+                                    <span asp-validation-for="Fecha" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cliente" class="form-label fw-bold">
+                                        <i class="bi bi-person-badge"></i> Cliente
+                                    </label>
+                                    <input asp-for="Cliente" 
+                                           class="form-control" 
+                                           required />
+                                    <span asp-validation-for="Cliente" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles (Productos) -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-cart"></i> Productos
+                        </h5>
+                        <span class="badge bg-light text-dark">
+                            @Model.Detalles.Count producto(s)
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div id="detalles-container">
+                            @if (Model.Detalles != null && Model.Detalles.Any())
+                            {
+                                @for (int i = 0; i < Model.Detalles.Count; i++)
+                                {
+                                    <div class="card mb-2 border-start border-5 border-warning detalle-item" id="detalle-@i">
+                                        <div class="card-body">
+                                            <div class="row g-2">
+                                                <div class="col-md-4">
+                                                    <label class="form-label small fw-bold">Producto</label>
+                                                    <input type="text" 
+                                                           asp-for="Detalles[i].Producto" 
+                                                           class="form-control" 
+                                                           required />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label small fw-bold">Cantidad</label>
+                                                    <input type="number" 
+                                                           asp-for="Detalles[i].Cantidad" 
+                                                           class="form-control" 
+                                                           min="1" 
+                                                           required />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label small fw-bold">Precio Unitario</label>
+                                                    <input type="number" 
+                                                           asp-for="Detalles[i].PrecioUnitario" 
+                                                           class="form-control" 
+                                                           step="0.01" 
+                                                           min="0.01" 
+                                                           required />
+                                                </div>
+                                                <div class="col-md-2 d-flex align-items-end">
+                                                    <button type="button" 
+                                                            class="btn btn-danger w-100" 
+                                                            onclick="eliminarDetalle(@i)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button type="button" 
+                                class="btn btn-success" 
+                                onclick="agregarDetalle()">
+                            <i class="bi bi-plus-circle"></i> Agregar Producto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resumen -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calculator"></i> Resumen
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Total Productos:</strong> <span id="totalProductos">0</span></p>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <p class="fs-5"><strong>Total:</strong> <span id="totalOrden" class="text-success">$0.00</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="bi bi-save"></i> Actualizar Orden
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        let detalleIndex = @Model.Detalles.Count;
+
+        function agregarDetalle() {
+            const container = document.getElementById('detalles-container');
+            const detalleHtml = `
+                <div class="card mb-2 border-start border-5 border-success detalle-item" id="detalle-${detalleIndex}">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Producto</label>
+                                <input type="text" 
+                                       name="Detalles[${detalleIndex}].Producto" 
+                                       class="form-control detalle-input" 
+                                       placeholder="Nombre del producto" 
+                                       required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Cantidad</label>
+                                <input type="number" 
+                                       name="Detalles[${detalleIndex}].Cantidad" 
+                                       class="form-control detalle-input" 
+                                       placeholder="1" 
+                                       min="1" 
+                                       required />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Precio Unitario</label>
+                                <input type="number" 
+                                       name="Detalles[${detalleIndex}].PrecioUnitario" 
+                                       class="form-control detalle-input" 
+                                       placeholder="0.00" 
+                                       step="0.01" 
+                                       min="0.01" 
+                                       required />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" 
+                                        class="btn btn-danger w-100" 
+                                        onclick="eliminarDetalle(${detalleIndex})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', detalleHtml);
+            detalleIndex++;
+            actualizarResumen();
+        }
+
+        function eliminarDetalle(index) {
+            const elemento = document.getElementById(`detalle-${index}`);
+            if (elemento) {
+                elemento.remove();
+                actualizarResumen();
+            }
+        }
+
+        function actualizarResumen() {
+            const detalles = document.querySelectorAll('.detalle-item');
+            const cantidades = Array.from(document.querySelectorAll('input[name*=".Cantidad"]'))
+                .map(input => parseInt(input.value) || 0);
+            const precios = Array.from(document.querySelectorAll('input[name*=".PrecioUnitario"]'))
+                .map(input => parseFloat(input.value) || 0);
+
+            const totalProductos = cantidades.reduce((a, b) => a + b, 0);
+            const totalOrden = cantidades.reduce((sum, qty, i) => sum + (qty * (precios[i] || 0)), 0);
+
+            document.getElementById('totalProductos').textContent = totalProductos;
+            document.getElementById('totalOrden').textContent = '$' + totalOrden.toFixed(2);
+        }
+
+        // Actualizar resumen al cambiar valores
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('detalles-container').addEventListener('input', actualizarResumen);
+            actualizarResumen();
+        });
+    </script>
+}
